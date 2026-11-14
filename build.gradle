@@ -45,8 +45,35 @@ sourceSets.test {
 sourceSets.client.output.resourcesDir = layout.buildDirectory
         .dir(releaseRequested ? 'resources/client-dlss' : 'resources/client-standard').get().asFile
 
-def ngxRoot = providers.gradleProperty('titaniumNgxRoot').getOrElse('')
-def cmake = providers.gradleProperty('titaniumCmake').getOrElse('cmake')
+// PC固有のSDK配置は非公開領域へ分離する。コマンドラインの-P指定を優先する。
+def localBuildSettings = new Properties()
+def localBuildSettingsFile = file('.local/build.properties')
+if (localBuildSettingsFile.isFile()) {
+    localBuildSettingsFile.withReader('UTF-8') { localBuildSettings.load(it) }
+}
+def ngxRoot = providers.gradleProperty('titaniumNgxRoot')
+        .getOrElse(localBuildSettings.getProperty('titaniumNgxRoot', ''))
+// 明示指定、PATH、Visual Studio 2022付属ツールの順でCMakeを検索する。
+// IDE起動時のPATHにCMakeがなくても、導入済みのC++ツールチェーンを利用できるようにする。
+def cmake = providers.gradleProperty('titaniumCmake').orElse(providers.provider {
+    def windows = System.getProperty('os.name').startsWith('Windows')
+    def executableName = windows ? 'cmake.exe' : 'cmake'
+    def pathTool = (System.getenv('PATH') ?: '').split(File.pathSeparator)
+            .collect { new File(it.replace('"', ''), executableName) }.find { it.isFile() }
+    if (pathTool) return pathTool.absolutePath
+    if (windows) {
+        def programFiles = System.getenv('ProgramFiles(x86)')
+        def vswhere = programFiles ? new File(programFiles, 'Microsoft Visual Studio/Installer/vswhere.exe') : null
+        if (vswhere?.isFile()) {
+            def bundledTools = providers.exec {
+                commandLine vswhere.absolutePath, '-latest', '-version', '[17.0,18.0)', '-products', '*',
+                        '-find', 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'
+            }.standardOutput.asText.get().readLines()
+            if (bundledTools) return bundledTools.first()
+        }
+    }
+    return executableName
+})
 def nativeDirectory = layout.buildDirectory.dir('native-v0.1.0')
 // 既存のネイティブビルド領域と分離し、再利用するDLLは明示的な指定だけを受け付ける。
 def nativeDll = providers.gradleProperty('titaniumNativeLibrary')
@@ -56,7 +83,7 @@ tasks.register('configureNative', Exec) {
     inputs.files(fileTree('native') { include 'CMakeLists.txt', 'include/**', 'src/**' })
     inputs.property 'ngxRoot', ngxRoot
     outputs.file(nativeDirectory.map { it.file('CMakeCache.txt') })
-    commandLine cmake, '-S', file('native'), '-B', nativeDirectory.get().asFile,
+    commandLine cmake.get(), '-S', file('native'), '-B', nativeDirectory.get().asFile,
             '-G', 'Visual Studio 17 2022', '-A', 'x64',
             "-DTITANIUM_NGX_ROOT=${ngxRoot ? file(ngxRoot).absolutePath : ''}"
     onlyIf { !providers.gradleProperty('titaniumNativeLibrary').isPresent() }
@@ -66,7 +93,7 @@ tasks.register('buildNative', Exec) {
     inputs.property 'ngxRoot', ngxRoot
     inputs.files(fileTree('native') { include 'CMakeLists.txt', 'include/**', 'src/**' })
     outputs.file(nativeDll)
-    commandLine cmake, '--build', nativeDirectory.get().asFile, '--config', 'Release', '--target', 'titanium_native'
+    commandLine cmake.get(), '--build', nativeDirectory.get().asFile, '--config', 'Release', '--target', 'titanium_native'
     onlyIf { !providers.gradleProperty('titaniumNativeLibrary').isPresent() }
 }
 
@@ -86,9 +113,10 @@ processClientResources {
 }
 
 if (releaseRequested) {
-    def vcRoot = providers.gradleProperty('titaniumVcRuntimeRoot').getOrElse('')
+    def vcRoot = providers.gradleProperty('titaniumVcRuntimeRoot')
+            .getOrElse(localBuildSettings.getProperty('titaniumVcRuntimeRoot', ''))
     if (!ngxRoot || !vcRoot) {
-        throw new GradleException('buildDlssRelease requires titaniumNgxRoot and titaniumVcRuntimeRoot.')
+        throw new GradleException('Set titaniumNgxRoot and titaniumVcRuntimeRoot with -P or in .local/build.properties before running buildDlssRelease.')
     }
     def assets = layout.buildDirectory.dir('generated/dlss-release-resources')
     tasks.register('prepareDlssReleaseResources', Exec) {

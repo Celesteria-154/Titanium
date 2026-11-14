@@ -46,13 +46,20 @@ Enhancedの対応判定は読み込んだシェーダーと実描画に基づく
 
 ## ソースからのビルド
 
-Java 25、CMake 3.24以上、Visual Studio 2022のC++ビルドツールが必要。`cmake`と`powershell.exe`をPATHから実行できる環境で使用する。
+Java 25、CMake 3.24以上、Visual Studio 2022のC++ビルドツールが必要。CMakeはPATH、Visual Studio 2022付属ツールの順で自動検出する。`powershell.exe`をPATHから実行できる環境で使用する。
 
 ```powershell
 .\gradlew.bat build
 ```
 
 SDK未指定のビルドはBilinearを利用できる。DLSSランタイム同梱版はNVIDIA DLSS SDK 310.9.1と対応するVisual C++ランタイムを用意してビルドする。
+
+IDEから実行する場合は、Git管理対象外の`.local/build.properties`に配置先を保存できる。相対パスはプロジェクトのルートを基準とする。コマンドラインの`-P`指定が優先される。
+
+```properties
+titaniumNgxRoot=.local/vendor/dlss-310.9.1
+titaniumVcRuntimeRoot=.local/vendor/vc-runtime
+```
 
 ```powershell
 .\gradlew.bat buildDlssRelease `
