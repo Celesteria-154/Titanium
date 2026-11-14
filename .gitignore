@@ -1,0 +1,22 @@
+# ビルド・実行時生成物
+/.gradle/
+/build/
+/run/
+/out/
+/logs/
+hs_err_pid*
+replay_pid*
+
+# エディター設定
+/.idea/
+/.vscode/
+*.iml
+.DS_Store
+
+# 非公開の開発資料・検証コード・補助スクリプト
+/.local/
+
+# ツールが固定位置で管理するファイル
+/.codex-remote-attachments/
+/.codex/
+/.agents/

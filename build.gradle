@@ -1,0 +1,135 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.20'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+def releaseRequested = gradle.startParameter.taskNames.any { it.tokenize(':').last() == 'buildDlssRelease' }
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        titanium {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }
+        }
+        filter { includeGroup 'maven.modrinth' }
+    }
+    maven { name = 'Shedaniel'; url = 'https://maven.shedaniel.me/' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    clientImplementation 'me.shedaniel.cloth:cloth-config-fabric:26.2.155'
+    clientCompileOnly 'maven.modrinth:modmenu:WdLLrOzD'
+}
+
+// 公開ソースは製品のみを対象とし、手元に残る検証ソースの暗黙コンパイルを防ぐ。
+sourceSets.test {
+    java.setSrcDirs([])
+    resources.setSrcDirs([])
+}
+// ランタイム同梱版と通常版のリソースを分離し、連続ビルド時のDLL混入を防ぐ。
+sourceSets.client.output.resourcesDir = layout.buildDirectory
+        .dir(releaseRequested ? 'resources/client-dlss' : 'resources/client-standard').get().asFile
+
+def ngxRoot = providers.gradleProperty('titaniumNgxRoot').getOrElse('')
+def cmake = providers.gradleProperty('titaniumCmake').getOrElse('cmake')
+def nativeDirectory = layout.buildDirectory.dir('native-v0.1.0')
+// 既存のネイティブビルド領域と分離し、再利用するDLLは明示的な指定だけを受け付ける。
+def nativeDll = providers.gradleProperty('titaniumNativeLibrary')
+        .map { file(it) }.orElse(nativeDirectory.map { it.file('Release/titanium_native.dll').asFile })
+
+tasks.register('configureNative', Exec) {
+    inputs.files(fileTree('native') { include 'CMakeLists.txt', 'include/**', 'src/**' })
+    inputs.property 'ngxRoot', ngxRoot
+    outputs.file(nativeDirectory.map { it.file('CMakeCache.txt') })
+    commandLine cmake, '-S', file('native'), '-B', nativeDirectory.get().asFile,
+            '-G', 'Visual Studio 17 2022', '-A', 'x64',
+            "-DTITANIUM_NGX_ROOT=${ngxRoot ? file(ngxRoot).absolutePath : ''}"
+    onlyIf { !providers.gradleProperty('titaniumNativeLibrary').isPresent() }
+}
+tasks.register('buildNative', Exec) {
+    dependsOn 'configureNative'
+    inputs.property 'ngxRoot', ngxRoot
+    inputs.files(fileTree('native') { include 'CMakeLists.txt', 'include/**', 'src/**' })
+    outputs.file(nativeDll)
+    commandLine cmake, '--build', nativeDirectory.get().asFile, '--config', 'Release', '--target', 'titanium_native'
+    onlyIf { !providers.gradleProperty('titaniumNativeLibrary').isPresent() }
+}
+
+processResources {
+    inputs.properties(version: project.version, minecraft_version: project.minecraft_version,
+            loader_version: project.loader_version)
+    filteringCharset = 'UTF-8'
+    filesMatching('fabric.mod.json') {
+        expand(version: project.version, minecraft_version: project.minecraft_version,
+                loader_version: project.loader_version)
+    }
+}
+processClientResources {
+    dependsOn 'buildNative'
+    destinationDir = sourceSets.client.output.resourcesDir
+    from(nativeDll) { into 'natives/windows-x86_64' }
+}
+
+if (releaseRequested) {
+    def vcRoot = providers.gradleProperty('titaniumVcRuntimeRoot').getOrElse('')
+    if (!ngxRoot || !vcRoot) {
+        throw new GradleException('buildDlssRelease requires titaniumNgxRoot and titaniumVcRuntimeRoot.')
+    }
+    def assets = layout.buildDirectory.dir('generated/dlss-release-resources')
+    tasks.register('prepareDlssReleaseResources', Exec) {
+        inputs.dir(file(ngxRoot))
+        inputs.files(['msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll'].collect { new File(vcRoot, it) })
+        inputs.files('licenses/DLSS-THIRD-PARTY-NOTICES.txt', 'scripts/prepare-dlss-release-assets.ps1')
+        outputs.dir(assets)
+        commandLine 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+                file('scripts/prepare-dlss-release-assets.ps1'), '-NgxRoot', file(ngxRoot),
+                '-VcRuntimeRoot', file(vcRoot), '-OutputDirectory', assets.get().asFile,
+                '-NoticeFile', file('licenses/DLSS-THIRD-PARTY-NOTICES.txt')
+    }
+    processClientResources {
+        dependsOn 'prepareDlssReleaseResources'
+        from(assets)
+    }
+    tasks.named('jar') { archiveClassifier = 'dlss' }
+}
+tasks.register('buildDlssRelease') {
+    group = 'build'
+    description = 'Builds the Windows x86-64 JAR with verified DLSS runtime assets.'
+    dependsOn 'jar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+jar {
+    from('LICENSE.txt') { rename { "LICENSE_${project.archives_base_name}.txt" } }
+    from('licenses') { into 'META-INF/licenses' }
+}
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}

@@ -1,0 +1,14 @@
+Titanium DLSS release third-party notices
+
+This release contains NVIDIA DLSS technology and redistributable object code
+from the NVIDIA RTX SDK. NVIDIA, the NVIDIA logo, GeForce RTX, and NVIDIA DLSS
+are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S.
+and other countries. The applicable NVIDIA RTX SDK license is included as
+META-INF/licenses/NVIDIA-RTX-SDK-LICENSE.txt.
+
+This release contains unmodified Microsoft Visual C++ Runtime files distributed
+with Titanium under the Microsoft Visual Studio license terms and Visual Studio
+2022 REDIST list:
+https://learn.microsoft.com/visualstudio/releases/2022/redistribution
+
+Microsoft and Visual C++ are trademarks of the Microsoft group of companies.

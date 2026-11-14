@@ -1,0 +1,35 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "celeste.titanium.mixin.client",
+  "plugin": "celeste.titanium.mixin.client.TitaniumMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GameRendererMixin",
+    "GuiPacingSubmitMixin",
+    "HudMixin",
+    "DebugScreenOverlayMixin",
+    "MainRenderTargetAccessor",
+    "WindowMixin",
+    "SkyRendererMixin",
+    "LevelRendererMixin",
+    "ChunkSectionsToRenderMixin",
+    "compat.SodiumTerrainDetailScopeMixin",
+    "compat.SodiumTerrainDetailBindMixin",
+    "compat.EnhancedCutoutDrawMixin",
+    "compat.IrisRenderTargetsMixin",
+    "compat.IrisFrameBoundaryMixin",
+    "compat.IrisEnhancedCompositeMixin",
+    "compat.IrisEnhancedFinalMixin",
+    "compat.EnhancedGlShaderMixin",
+    "compat.IrisEnhancedShaderSourceMixin",
+    "compat.IrisEnhancedHandMixin",
+    "compat.IrisEnhancedReloadMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

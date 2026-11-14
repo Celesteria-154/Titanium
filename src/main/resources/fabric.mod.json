@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "titanium",
+  "version": "${version}",
+  "name": "Titanium",
+  "description": "OpenGL world render scaling with NVIDIA DLSS, DLAA and native-resolution GUI. Includes Standard and Enhanced shaderpack integration.",
+  "authors": [
+    "Celesteria-154"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "celeste.titanium.client.TitaniumDataGenerator"
+    ],
+    "client": [
+      "celeste.titanium.client.TitaniumClient"
+    ],
+    "modmenu": [
+      "celeste.titanium.client.TitaniumModMenu"
+    ],
+    "main": [
+      "celeste.titanium.Titanium"
+    ]
+  },
+  "mixins": [
+    "titanium.mixins.json",
+    {
+      "config": "titanium.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "cloth-config": ">=26.2.155",
+    "minecraft": "${minecraft_version}",
+    "java": ">=25"
+  },
+  "breaks": {
+    "renderscale": "*"
+  }
+}
