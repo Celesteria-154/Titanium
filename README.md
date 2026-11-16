@@ -30,6 +30,45 @@ DLSSランタイム同梱版の`titanium-0.1.1-dlss.jar`を`mods`へ配置する
 `/titanium`で描画寸法・有効な描画経路・退避理由を確認できる。`/titanium reload`は設定ファイルを再読み込みする。  
 DLSSの実行条件を満たさない場合はBilinearへ退避する。
 
+## ベンチマーク
+
+### 測定環境
+※参考程度
+
+| 項目             | 条件                                                                                                                                                                                                  |
+|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CPU              | Intel Core i7-14700K                                                                                                                                                                                  |
+| GPU              | NVIDIA GeForce RTX 5070 Ti                                                                                                                                                                            |
+| RAM              | DDR4 64GB 3600MHz CL16                                                                                                                                                                                |
+| Mod環境          | 軽量化複数                                                                                                                                                                                            |
+| シェーダーパック | [Ray-0.1.0a0-c7fa099-nightly](https://github.com/kuwacom/ray)（設定は既定）                                                                                                                           |
+| 出力解像度       | 3840 × 2160（4K）                                                                                                                                                                                     |
+| DLSSプリセット   | Default（既定）                                                                                                                                                                                       |
+| 比較条件         | ジャングルの水辺を同じ構図で比較。DLSS有効時は品質のみ切り替え、基準のNativeはDLSSを無効化。計測開始から20秒ほど放置した値を参考値とする。 DLSS有効時は影modのTAAをOFF。ネイティブ時にはTAAを有効化。 |
+
+### 計測結果
+
+| モード | 内部描画解像度 | 平均FPS | Native比 | 1% Low（FPS） | 0.1% Low（FPS） | VRAM使用量（MB） |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| DLAA | 3840 × 2160 | 28 | +3.7% | 26 | 25 | 12,270 |
+| Quality | 2560 × 1440 | 47 | +74.1% | 44 | 23 | 10,393 |
+| Balanced | 2227 × 1253 | 54 | +100.0% | 51 | 29 | 9,918 |
+| Performance | 1920 × 1080 | 55 | +103.7% | 52 | 51 | 9,887 |
+| Ultra Performance | 1280 × 720 | 77 | +185.2% | 71 | 69 | 9,282 |
+| Native（DLSSオフ） | 3840 × 2160 | 27 | 基準 | 25 | 22 | 11,801 |
+
+### 画質比較
+
+画像をクリックすると4K版を開ける。
+
+| DLAA | Quality | Balanced |
+| :---: | :---: | :---: |
+| [![DLAA](img/benchmark/dlaa.webp)](img/benchmark/dlaa.webp) | [![Quality](img/benchmark/quality.webp)](img/benchmark/quality.webp) | [![Balanced](img/benchmark/balanced.webp)](img/benchmark/balanced.webp) |
+
+| Performance | Ultra Performance | Native（DLSSオフ） |
+| :---: | :---: | :---: |
+| [![Performance](img/benchmark/performance.webp)](img/benchmark/performance.webp) | [![Ultra Performance](img/benchmark/ultra-performance.webp)](img/benchmark/ultra-performance.webp) | [![Native](img/benchmark/native.webp)](img/benchmark/native.webp) |
+
 ## 描画経路
 
 Standardはワールド出力をDLSSへ渡す標準経路。  
