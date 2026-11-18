@@ -1,99 +1,103 @@
 # Titanium
 
-Minecraft Java 26.2向けのクライアント専用Fabric MOD。  
-OpenGL環境でワールドの描画解像度を制御し、NVIDIA DLSS・DLAAまたはBilinearによる出力を行う。
+English | [日本語](README.ja.md)
 
-## 動作要件
+Titanium is a client-side Fabric mod for Minecraft Java Edition 26.2. It controls the world's render resolution in OpenGL and supports NVIDIA DLSS, DLAA, and bilinear scaling.
 
-- Minecraft 26.2(今後対応予定？)
-- Fabric Loader 0.19.5以上、Fabric API、Cloth Config 26.2.155以上
-- DLSS・DLAAには対応するNVIDIA RTX GPUとドライバーが必要
-- シェーダーパック連携はIris 1.11.2 / Sodium 0.9.1向け
-- DLSSを使用する場合は影mod側のTAA及びAAをOFFにしてください （ありえないくらいボヤケます）
+## Requirements
 
-## 導入と設定
+- Minecraft 26.2 (support tentative)
+- Fabric Loader 0.19.5 or later, Fabric API, and Cloth Config 26.2.155 or later
+- A compatible NVIDIA RTX GPU and driver for DLSS and DLAA
+- Shader pack integration targets Iris 1.11.2 and Sodium 0.9.1
+- When using DLSS, disable TAA and other anti-aliasing in the shader pack to avoid excessive blur.
 
-DLSSランタイム同梱版の`titanium-0.1.1-dlss.jar`を`mods`へ配置する。
-設定画面は`/titanium config`、Mod Menu、またはキー設定の「Titaniumの設定を開く」から開く。キーの既定値は未設定。設定は`config/titanium.json`に保存する。
+## Installation and configuration
 
-| 項目 | 内容 | 既定       |
-| --- | --- |------------|
-| アップスケーラー | Bilinear / NVIDIA DLSS |
-| Bilinear描画倍率 | 0.25〜1.0| 2/3(0.666) |
-| DLSS品質 | Ultra Performance / Performance / Quality / Balanced / DLAA | Quality    |
-| DLSS連携 | Standard / Enhanced| Standard   |
-| プリセット | Default / J / K / L / M| Default    |
-| 出力シャープネス | 0.0〜1.0| 0          |
-| 地形テクスチャの細部保持 | 解像度に応じたLOD補正| True       |
-| GUIフレームペーシング | 任意の試験機能| False      |
+Place `titanium-0.1.1-dlss.jar`, which includes the DLSS runtime, in the `mods` folder.
 
-`/titanium`で描画寸法・有効な描画経路・退避理由を確認できる。`/titanium reload`は設定ファイルを再読み込みする。  
-DLSSの実行条件を満たさない場合はBilinearへ退避する。
+Open the settings with `/titanium config`, through Mod Menu, or with the key binding to open Titanium's settings. The key is unassigned by default. Settings are saved in `config/titanium.json`.
 
-## ベンチマーク
+| Setting | Options | Default |
+| --- | --- | --- |
+| Upscaler | Bilinear / NVIDIA DLSS | |
+| Bilinear render scale | 0.25–1.0 | 2/3 (0.666) |
+| DLSS quality | Ultra Performance / Performance / Quality / Balanced / DLAA | Quality |
+| DLSS integration | Standard / Enhanced | Standard |
+| Preset | Default / J / K / L / M | Default |
+| Output sharpness | 0.0–1.0 | 0 |
+| Preserve terrain texture detail | Resolution-dependent LOD adjustment | On |
+| GUI frame pacing | Optional experimental feature | Off |
 
-### 測定環境
-※参考程度
+Run `/titanium` to check the render dimensions, active rendering path, and fallback reason. Run `/titanium reload` to reload the configuration file. Titanium falls back to Bilinear if the DLSS requirements are unmet.
 
-| 項目             | 条件                                                                                                                                                                                                  |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CPU              | Intel Core i7-14700K                                                                                                                                                                                  |
-| GPU              | NVIDIA GeForce RTX 5070 Ti                                                                                                                                                                            |
-| RAM              | DDR4 64GB 3600MHz CL16                                                                                                                                                                                |
-| Mod環境          | 軽量化複数                                                                                                                                                                                            |
-| シェーダーパック | [Ray-0.1.0a0-c7fa099-nightly](https://github.com/kuwacom/ray)（設定は既定）                                                                                                                           |
-| 出力解像度       | 3840 × 2160（4K）                                                                                                                                                                                     |
-| DLSSプリセット   | Default（既定）                                                                                                                                                                                       |
-| 比較条件         | ジャングルの水辺を同じ構図で比較。DLSS有効時は品質のみ切り替え、基準のNativeはDLSSを無効化。計測開始から20秒ほど放置した値を参考値とする。 DLSS有効時は影modのTAAをOFF。ネイティブ時にはTAAを有効化。 |
+## Benchmark
 
-### 計測結果
+### Test setup
 
-| モード | 内部描画解像度 | 平均FPS | Native比 | 1% Low（FPS） | 0.1% Low（FPS） | VRAM使用量（MB） |
+These results are for reference.
+
+| Item | Details |
+| --- | --- |
+| CPU | Intel Core i7-14700K |
+| GPU | NVIDIA GeForce RTX 5070 Ti |
+| RAM | 64 GB DDR4-3600 CL16 |
+| Mod setup | Several performance mods |
+| Shader pack | [Ray-0.1.0a0-c7fa099-nightly](https://github.com/kuwacom/ray) (default settings apart from TAA as described below) |
+| Output resolution | 3840 × 2160 (4K) |
+| DLSS preset | Default |
+| Test method | Same view of a jungle waterfront in each run. Readings were taken after about 20 seconds with the camera stationary. Only the quality mode varied across DLSS runs, with shader pack TAA off. The native baseline used DLSS off and shader pack TAA on. |
+
+### Results
+
+| Mode | Internal render resolution | Avg. FPS | Avg. FPS vs. native | 1% low (FPS) | 0.1% low (FPS) | VRAM usage (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | DLAA | 3840 × 2160 | 28 | +3.7% | 26 | 25 | 12,270 |
 | Quality | 2560 × 1440 | 47 | +74.1% | 44 | 23 | 10,393 |
 | Balanced | 2227 × 1253 | 54 | +100.0% | 51 | 29 | 9,918 |
 | Performance | 1920 × 1080 | 55 | +103.7% | 52 | 51 | 9,887 |
 | Ultra Performance | 1280 × 720 | 77 | +185.2% | 71 | 69 | 9,282 |
-| Native（DLSSオフ） | 3840 × 2160 | 27 | 基準 | 25 | 22 | 11,801 |
+| Native (DLSS off) | 3840 × 2160 | 27 | Baseline | 25 | 22 | 11,801 |
 
-### 画質比較
+### Image quality comparison
 
-画像をクリックすると4K版を開ける。
+Click any screenshot to open the full 4K image.
 
 | DLAA | Quality | Balanced |
 | :---: | :---: | :---: |
 | [![DLAA](img/benchmark/dlaa.webp)](img/benchmark/dlaa.webp) | [![Quality](img/benchmark/quality.webp)](img/benchmark/quality.webp) | [![Balanced](img/benchmark/balanced.webp)](img/benchmark/balanced.webp) |
 
-| Performance | Ultra Performance | Native（DLSSオフ） |
+| Performance | Ultra Performance | Native (DLSS off) |
 | :---: | :---: | :---: |
 | [![Performance](img/benchmark/performance.webp)](img/benchmark/performance.webp) | [![Ultra Performance](img/benchmark/ultra-performance.webp)](img/benchmark/ultra-performance.webp) | [![Native](img/benchmark/native.webp)](img/benchmark/native.webp) |
 
-## 描画経路
+## Rendering paths
 
-Standardはワールド出力をDLSSへ渡す標準経路。  
-Enhancedは対応するパックの描画構造を解析し、ジッターやTAAの担当を実行時に調整する。対応するSolas系のDLAA経路では、実際に描画された切り抜き地形に元パックのTAAを使用し、残りの領域にDLAAを使用する。
-Enhancedの対応判定は読み込んだシェーダーと実描画に基づく。パックのZIPや設定ファイルの編集は不要。解析・変換に失敗した場合はStandardへ退避する。連携モードの切り替え時はIrisを再読み込みする。（試験昨日）
+Standard passes the rendered world image to DLSS.
 
-## 制約
+Enhanced analyzes the rendering pipeline of supported shader packs and adjusts how jitter and TAA are handled at runtime. In the DLAA path for supported Solas-based packs, it applies the pack's TAA to rendered cutout terrain and DLAA to the rest of the image.
 
-- 遠景の葉の隙間や微細構造は、Native TAAより失われる場合がある。
-- MVは主にカメラ移動に対応し、葉の揺れ・水・エンティティ・腕の変形への対応は限定的。
-- Enhancedの対応範囲はパックの描画構造と有効なエフェクトに依存する。
-- 手動プリセットは画質保証の対象外。NVIDIA App・ドライバーの設定がモデル選択に影響する場合がある。
-- RenderScaleとの同時利用には非対応。
+Enhanced determines compatibility from the loaded shaders and actual rendering. It works with the existing shader pack ZIP and configuration. Titanium falls back to Standard if analysis or transformation fails. Switching integration modes reloads Iris. This feature is experimental.
 
-## ソースからのビルド
+## Limitations
 
-Java 25、CMake 3.24以上、Visual Studio 2022のC++ビルドツールが必要。CMakeはPATH、Visual Studio 2022付属ツールの順で自動検出する。`powershell.exe`をPATHから実行できる環境で使用する。
+- Distant gaps between leaves and other fine details may be less visible than with native TAA.
+- Motion vectors primarily cover camera movement. Coverage for swaying foliage, water, and deformations of entities and the player arm is limited.
+- Enhanced support depends on the shader pack's rendering pipeline and enabled effects.
+- Image quality may vary with manually selected presets. NVIDIA App and driver settings can affect model selection.
+- RenderScale is incompatible with Titanium.
+
+## Building from source
+
+The build requires Java 25, CMake 3.24 or later, and the Visual Studio 2022 C++ build tools. The build checks PATH first for CMake, then the copy bundled with Visual Studio 2022. Make sure `powershell.exe` is available on PATH.
 
 ```powershell
 .\gradlew.bat build
 ```
 
-SDK未指定のビルドはBilinearを利用できる。DLSSランタイム同梱版はNVIDIA DLSS SDK 310.9.1と対応するVisual C++ランタイムを用意してビルドする。
+A build without the DLSS SDK supports Bilinear. To bundle the DLSS runtime, provide NVIDIA DLSS SDK 310.9.1 and the matching Visual C++ runtime.
 
-IDEから実行する場合は、Git管理対象外の`.local/build.properties`に配置先を保存できる。相対パスはプロジェクトのルートを基準とする。コマンドラインの`-P`指定が優先される。
+For IDE builds, you can store the paths in the Git-ignored `.local/build.properties`. Relative paths resolve from the project root. Command-line `-P` options take precedence.
 
 ```properties
 titaniumNgxRoot=.local/vendor/dlss-310.9.1
@@ -102,12 +106,12 @@ titaniumVcRuntimeRoot=.local/vendor/vc-runtime
 
 ```powershell
 .\gradlew.bat buildDlssRelease `
-  -PtitaniumNgxRoot="<DLSS SDKの展開先>" `
-  -PtitaniumVcRuntimeRoot="<Visual C++ランタイムの格納先>"
+  -PtitaniumNgxRoot="<DLSS SDK directory>" `
+  -PtitaniumVcRuntimeRoot="<Visual C++ runtime directory>"
 ```
 
-同梱対象のDLLはバージョン・ハッシュ・署名を照合する。必要なVisual C++ランタイムは14.51.36247.0。CMakeの実行ファイルは`-PtitaniumCmake=<実行ファイル>`で指定可能。既存の対応DLLを使用する場合は`-PtitaniumNativeLibrary=<titanium_native.dll>`を指定する。成果物は`build/libs`へ出力する。
+The build checks the versions, hashes, and signatures of the DLLs it bundles. The required Visual C++ runtime version is 14.51.36247.0. Use `-PtitaniumCmake=<executable>` to specify a CMake executable or `-PtitaniumNativeLibrary=<titanium_native.dll>` to use an existing compatible native library. Build artifacts are written to `build/libs`.
 
-## ライセンス
+## License
 
-TitaniumのコードはMITライセンス。NVIDIA DLSSおよびMicrosoftランタイムには各提供元の条件が適用される。配布JAR内の`META-INF/licenses`に同梱するライセンスと通知を参照。
+Titanium's source code is licensed under MIT. NVIDIA DLSS and the Microsoft runtime are subject to their respective providers' terms. See `META-INF/licenses` in the distributed JAR for the bundled licenses and notices.
